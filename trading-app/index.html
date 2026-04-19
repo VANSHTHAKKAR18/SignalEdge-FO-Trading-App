@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignalEdge — AI F&O Trading Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-icon">◈</span>
+      <span class="logo-text">SignalEdge</span>
+      <span class="logo-sub">F&O Engine v2.0</span>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">⬡</span> Dashboard
+      </button>
+      <button class="nav-item" data-page="signals">
+        <span class="nav-icon">◎</span> Live Signals
+      </button>
+      <button class="nav-item" data-page="optionchain">
+        <span class="nav-icon">⊞</span> Option Chain
+      </button>
+      <button class="nav-item" data-page="indicators">
+        <span class="nav-icon">∿</span> Indicators
+      </button>
+      <button class="nav-item" data-page="alerts">
+        <span class="nav-icon">◉</span> Alerts
+        <span class="badge" id="alert-badge">0</span>
+      </button>
+      <button class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙</span> API Setup
+      </button>
+    </nav>
+
+    <div class="sidebar-status">
+      <div class="conn-status" id="conn-status">
+        <span class="conn-dot" id="conn-dot"></span>
+        <span id="conn-text">Connecting…</span>
+      </div>
+      <div class="latency-row">
+        <span class="latency-label">Latency</span>
+        <span class="latency-val" id="latency">—</span>
+      </div>
+      <div class="latency-row">
+        <span class="latency-label">Tick rate</span>
+        <span class="latency-val" id="tick-rate">—</span>
+      </div>
+      <div class="market-time" id="market-time">—</div>
+      <div class="market-session" id="market-session">—</div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="index-tabs">
+        <button class="idx-tab active" data-index="NIFTY">
+          <span class="idx-name">NIFTY 50</span>
+          <span class="idx-price" id="tab-price-NIFTY">—</span>
+          <span class="idx-chg" id="tab-chg-NIFTY">—</span>
+        </button>
+        <button class="idx-tab" data-index="BANKNIFTY">
+          <span class="idx-name">BANKNIFTY</span>
+          <span class="idx-price" id="tab-price-BANKNIFTY">—</span>
+          <span class="idx-chg" id="tab-chg-BANKNIFTY">—</span>
+        </button>
+        <button class="idx-tab" data-index="SENSEX">
+          <span class="idx-name">SENSEX</span>
+          <span class="idx-price" id="tab-price-SENSEX">—</span>
+          <span class="idx-chg" id="tab-chg-SENSEX">—</span>
+        </button>
+        <button class="idx-tab" data-index="FINNIFTY">
+          <span class="idx-name">FINNIFTY</span>
+          <span class="idx-price" id="tab-price-FINNIFTY">—</span>
+          <span class="idx-chg" id="tab-chg-FINNIFTY">—</span>
+        </button>
+      </div>
+      <div class="topbar-right">
+        <div class="vix-box">
+          <span class="vix-label">India VIX</span>
+          <span class="vix-val" id="vix-val">—</span>
+        </div>
+        <div class="broker-select-wrap">
+          <select id="broker-select">
+            <option value="zerodha">Zerodha Kite</option>
+            <option value="upstox">Upstox</option>
+            <option value="angel">Angel One</option>
+            <option value="demo">Demo Mode</option>
+          </select>
+        </div>
+        <div class="live-pill" id="live-pill">
+          <span class="live-dot-anim"></span> LIVE
+        </div>
+      </div>
+    </header>
+
+    <!-- PAGES -->
+    <div class="pages">
+
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+        <div class="dash-grid">
+
+          <!-- LEFT: CHART + METRICS -->
+          <div class="dash-left">
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title-group">
+                  <span class="chart-title" id="chart-index-label">NIFTY 50</span>
+                  <span class="chart-price" id="chart-price">—</span>
+                  <span class="chart-chg" id="chart-chg">—</span>
+                </div>
+                <div class="tf-tabs">
+                  <button class="tf-tab active" data-tf="1m">1m</button>
+                  <button class="tf-tab" data-tf="3m">3m</button>
+                  <button class="tf-tab" data-tf="5m">5m</button>
+                  <button class="tf-tab" data-tf="15m">15m</button>
+                </div>
+              </div>
+              <div class="chart-area">
+                <canvas id="priceChart"></canvas>
+                <div class="chart-crosshair" id="chartCrosshair"></div>
+              </div>
+              <div class="chart-volume-area">
+                <canvas id="volumeChart"></canvas>
+              </div>
+            </div>
+
+            <div class="metrics-row">
+              <div class="metric-card">
+                <div class="metric-label">Spot Price</div>
+                <div class="metric-val" id="m-spot">—</div>
+                <div class="metric-sub" id="m-spot-sub">—</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Futures</div>
+                <div class="metric-val" id="m-fut">—</div>
+                <div class="metric-sub" id="m-fut-sub">—</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">PCR</div>
+                <div class="metric-val" id="m-pcr">—</div>
+                <div class="metric-sub" id="m-pcr-sub">—</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">India VIX / IV</div>
+                <div class="metric-val" id="m-iv">—</div>
+                <div class="metric-sub" id="m-iv-sub">—</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">ATR (14)</div>
+                <div class="metric-val" id="m-atr">—</div>
+                <div class="metric-sub" id="m-atr-sub">—</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">OI Change</div>
+                <div class="metric-val" id="m-oi">—</div>
+                <div class="metric-sub" id="m-oi-sub">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: SIGNAL PANEL -->
+          <div class="dash-right">
+            <div class="signal-engine-card" id="signal-card">
+              <div class="sig-engine-header">
+                <span class="sig-engine-title">Signal Engine</span>
+                <span class="sig-refresh-time" id="sig-refresh">Calculating…</span>
+              </div>
+
+              <div class="score-display">
+                <svg class="score-svg" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="#1a1a2e" stroke-width="8"/>
+                  <circle id="score-arc" cx="60" cy="60" r="50" fill="none" stroke="#00ff88" stroke-width="8"
+                    stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round"
+                    transform="rotate(-90 60 60)" style="transition: stroke-dashoffset 0.5s ease, stroke 0.3s"/>
+                  <text x="60" y="55" text-anchor="middle" class="score-num" id="score-num">—</text>
+                  <text x="60" y="72" text-anchor="middle" class="score-pct">SCORE</text>
+                </svg>
+                <div class="score-info">
+                  <div class="signal-badge-large" id="signal-badge">ANALYZING</div>
+                  <div class="signal-instrument" id="signal-instrument">—</div>
+                  <div class="signal-entry-row">
+                    <span class="entry-label">Entry</span>
+                    <span class="entry-val" id="signal-entry">—</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CONFIRMATION BOX -->
+              <div class="confirm-banner" id="confirm-banner" style="display:none">
+                <span class="confirm-star">★</span>
+                <div>
+                  <div class="confirm-title">90%+ CONFIRMATION</div>
+                  <div class="confirm-desc" id="confirm-desc">All conditions aligned</div>
+                </div>
+              </div>
+
+              <div class="targets-grid">
+                <div class="tgt-box">
+                  <div class="tgt-label">T1</div>
+                  <div class="tgt-price" id="t1-price">—</div>
+                  <div class="tgt-time" id="t1-time">—</div>
+                  <div class="tgt-pct" id="t1-pct">—</div>
+                </div>
+                <div class="tgt-box">
+                  <div class="tgt-label">T2</div>
+                  <div class="tgt-price" id="t2-price">—</div>
+                  <div class="tgt-time" id="t2-time">—</div>
+                  <div class="tgt-pct" id="t2-pct">—</div>
+                </div>
+                <div class="tgt-box">
+                  <div class="tgt-label">T3</div>
+                  <div class="tgt-price" id="t3-price">—</div>
+                  <div class="tgt-time" id="t3-time">—</div>
+                  <div class="tgt-pct" id="t3-pct">—</div>
+                </div>
+              </div>
+
+              <div class="sl-band" id="sl-band">
+                <span class="sl-label">Stop Loss</span>
+                <span class="sl-price" id="sl-price">—</span>
+                <span class="sl-pct" id="sl-pct">—</span>
+              </div>
+
+              <div class="score-breakdown">
+                <div class="breakdown-row">
+                  <span class="bk-label">Trend <span class="bk-weight">(35%)</span></span>
+                  <div class="bk-bar-wrap">
+                    <div class="bk-bar-track">
+                      <div class="bk-bar-fill" id="bk-trend" style="width:0%"></div>
+                    </div>
+                  </div>
+                  <span class="bk-val" id="bk-trend-val">—</span>
+                </div>
+                <div class="breakdown-row">
+                  <span class="bk-label">Momentum <span class="bk-weight">(25%)</span></span>
+                  <div class="bk-bar-wrap">
+                    <div class="bk-bar-track">
+                      <div class="bk-bar-fill" id="bk-mom" style="width:0%"></div>
+                    </div>
+                  </div>
+                  <span class="bk-val" id="bk-mom-val">—</span>
+                </div>
+                <div class="breakdown-row">
+                  <span class="bk-label">Volatility <span class="bk-weight">(20%)</span></span>
+                  <div class="bk-bar-wrap">
+                    <div class="bk-bar-track">
+                      <div class="bk-bar-fill" id="bk-vol" style="width:0%"></div>
+                    </div>
+                  </div>
+                  <span class="bk-val" id="bk-vol-val">—</span>
+                </div>
+                <div class="breakdown-row">
+                  <span class="bk-label">Volume <span class="bk-weight">(20%)</span></span>
+                  <div class="bk-bar-wrap">
+                    <div class="bk-bar-track">
+                      <div class="bk-bar-fill" id="bk-volm" style="width:0%"></div>
+                    </div>
+                  </div>
+                  <span class="bk-val" id="bk-volm-val">—</span>
+                </div>
+              </div>
+
+              <div class="reasons-list" id="reasons-list"></div>
+            </div>
+
+            <!-- MULTI TIMEFRAME -->
+            <div class="mtf-card">
+              <div class="mtf-title">Multi-Timeframe Analysis</div>
+              <div class="mtf-grid">
+                <div class="mtf-cell" id="mtf-1m"><span class="mtf-tf">1m</span><span class="mtf-sig" id="mtf-1m-sig">—</span><span class="mtf-score" id="mtf-1m-score">—</span></div>
+                <div class="mtf-cell" id="mtf-3m"><span class="mtf-tf">3m</span><span class="mtf-sig" id="mtf-3m-sig">—</span><span class="mtf-score" id="mtf-3m-score">—</span></div>
+                <div class="mtf-cell" id="mtf-5m"><span class="mtf-tf">5m</span><span class="mtf-sig" id="mtf-5m-sig">—</span><span class="mtf-score" id="mtf-5m-score">—</span></div>
+                <div class="mtf-cell" id="mtf-15m"><span class="mtf-tf">15m</span><span class="mtf-sig" id="mtf-15m-sig">—</span><span class="mtf-score" id="mtf-15m-score">—</span></div>
+              </div>
+              <div class="mtf-summary" id="mtf-summary">Analyzing timeframes…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIGNALS PAGE -->
+      <div class="page" id="page-signals">
+        <div class="page-header"><h2>Live Signals</h2><span class="page-sub">Auto-refreshed on every tick · Manual execution only</span></div>
+        <div class="signals-list" id="signals-list"></div>
+      </div>
+
+      <!-- OPTION CHAIN PAGE -->
+      <div class="page" id="page-optionchain">
+        <div class="page-header">
+          <h2>Option Chain</h2>
+          <div class="oc-controls">
+            <select id="oc-index-sel">
+              <option>NIFTY</option><option>BANKNIFTY</option><option>SENSEX</option>
+            </select>
+            <select id="oc-expiry-sel"><option>Current Week</option><option>Next Week</option><option>Monthly</option></select>
+          </div>
+        </div>
+        <div class="oc-header-row">
+          <div class="oc-ce-head">CALLS (CE)</div>
+          <div class="oc-strike-head">STRIKE</div>
+          <div class="oc-pe-head">PUTS (PE)</div>
+        </div>
+        <div class="oc-subheader">
+          <div class="oc-ce-sub"><span>OI</span><span>Chg%</span><span>IV</span><span>LTP</span></div>
+          <div class="oc-strike-sub"></div>
+          <div class="oc-pe-sub"><span>LTP</span><span>IV</span><span>Chg%</span><span>OI</span></div>
+        </div>
+        <div id="option-chain-body"></div>
+        <div class="oc-legend">
+          <span class="oc-leg-item"><span class="oc-leg-dot" style="background:#00ff8866"></span>Max OI (Support/Resistance)</span>
+          <span class="oc-leg-item"><span class="oc-leg-dot" style="background:#ff6b3566"></span>ATM Strike</span>
+        </div>
+      </div>
+
+      <!-- INDICATORS PAGE -->
+      <div class="page" id="page-indicators">
+        <div class="page-header"><h2>Technical Indicators</h2></div>
+        <div class="ind-grid" id="ind-grid"></div>
+      </div>
+
+      <!-- ALERTS PAGE -->
+      <div class="page" id="page-alerts">
+        <div class="page-header">
+          <h2>Alerts</h2>
+          <button class="clear-btn" onclick="clearAlerts()">Clear All</button>
+        </div>
+        <div id="alerts-container"></div>
+      </div>
+
+      <!-- SETTINGS PAGE -->
+      <div class="page" id="page-settings">
+        <div class="page-header"><h2>API Setup & Broker Config</h2></div>
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3>Zerodha Kite</h3>
+            <div class="form-group"><label>API Key</label><input type="text" id="kite-api-key" placeholder="Your Kite API Key"></div>
+            <div class="form-group"><label>API Secret</label><input type="password" id="kite-api-secret" placeholder="Your Kite API Secret"></div>
+            <div class="form-group"><label>Access Token</label><input type="text" id="kite-access-token" placeholder="Session Access Token"></div>
+            <button class="connect-btn" onclick="connectKite()">Connect Zerodha</button>
+            <div class="settings-note">
+              <strong>How to get tokens:</strong><br>
+              1. Login at <a href="https://kite.trade" target="_blank">kite.trade</a><br>
+              2. Create app → get API Key + Secret<br>
+              3. Use Kite Connect login flow to get Access Token<br>
+              4. Paste above and click Connect
+            </div>
+          </div>
+          <div class="settings-card">
+            <h3>Upstox</h3>
+            <div class="form-group"><label>API Key</label><input type="text" id="upstox-api-key" placeholder="Upstox API Key"></div>
+            <div class="form-group"><label>Access Token</label><input type="text" id="upstox-token" placeholder="Access Token"></div>
+            <button class="connect-btn" onclick="connectUpstox()">Connect Upstox</button>
+          </div>
+          <div class="settings-card">
+            <h3>Angel One SmartAPI</h3>
+            <div class="form-group"><label>API Key</label><input type="text" id="angel-api-key" placeholder="Angel One API Key"></div>
+            <div class="form-group"><label>Client ID</label><input type="text" id="angel-client" placeholder="Client ID"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="angel-pass" placeholder="Password"></div>
+            <button class="connect-btn" onclick="connectAngel()">Connect Angel One</button>
+          </div>
+          <div class="settings-card">
+            <h3>Signal Engine Config</h3>
+            <div class="form-group"><label>Min Confidence for Alert</label>
+              <input type="range" id="conf-threshold" min="50" max="95" value="75" oninput="document.getElementById('conf-val').textContent=this.value+'%'">
+              <span id="conf-val">75%</span>
+            </div>
+            <div class="form-group"><label>Confirmation Signal Threshold</label>
+              <input type="range" id="confirm-threshold" min="80" max="99" value="90" oninput="document.getElementById('confirm-val').textContent=this.value+'%'">
+              <span id="confirm-val">90%</span>
+            </div>
+            <div class="form-group"><label>Sound Alerts</label>
+              <label class="toggle"><input type="checkbox" id="sound-toggle" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div class="form-group"><label>Auto-refresh Option Chain</label>
+              <label class="toggle"><input type="checkbox" id="oc-toggle" checked><span class="toggle-slider"></span></label>
+            </div>
+            <button class="connect-btn" onclick="saveSettings()">Save Settings</button>
+          </div>
+        </div>
+        <div class="settings-card" style="margin-top:1.5rem">
+          <h3>Demo Mode</h3>
+          <p style="color:#888;font-size:0.85rem;margin-bottom:1rem">No API key? Use Demo Mode to see the full engine with simulated real-time data. Switch broker to "Demo Mode" in the top bar.</p>
+          <button class="connect-btn" onclick="enableDemo()">Enable Demo Mode</button>
+        </div>
+      </div>
+
+    </div><!-- /pages -->
+  </main>
+</div>
+
+<!-- ALERT TOAST -->
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/broker.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
